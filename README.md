@@ -66,7 +66,7 @@ prox37-nl-roster/
 
 ## 自测结果
 
-`npm test` 输出 19/20 通过，准确率 95%（要求 ≥95%）；唯一失败为用例 7，仿真数据缺 `LOW_HOURS_PAIR` 场景，非语义识别错误。详见 `selftest.md`。
+`npm test` 最近一次输出 19/20 通过（95%，要求 ≥95%）。详见 `selftest.md`。
 
 ## 已知限制
 
