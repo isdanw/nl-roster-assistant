@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>自然语言排班助手 Demo</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --panel:#ffffff; --ink:#1f2329; --sub:#6b7280; --line:#e5e7eb;
+    --brand:#2563eb; --brand-soft:#eff4ff;
+    --ok:#16a34a; --ok-bg:#eafaf0; --watch:#ca8a04; --watch-bg:#fef9e7;
+    --warn:#ea580c; --warn-bg:#fff1e8; --bad:#dc2626; --bad-bg:#fdeaea;
+    --chip:#eef2f7;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+       background:var(--bg);color:var(--ink);font-size:14px;line-height:1.5;}
+  header{background:var(--panel);border-bottom:1px solid var(--line);padding:14px 22px;display:flex;align-items:center;gap:12px;}
+  header .logo{width:30px;height:30px;border-radius:8px;background:var(--brand);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;}
+  header h1{font-size:16px;margin:0;font-weight:650;}
+  header .tag{margin-left:auto;font-size:12px;color:var(--sub);background:var(--chip);padding:3px 10px;border-radius:20px;}
+  .wrap{display:flex;gap:18px;padding:18px;max-width:1200px;margin:0 auto;align-items:flex-start;}
+  .side{width:280px;flex:0 0 280px;}
+  .main{flex:1;min-width:0;}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:14px;}
+  .side h3{font-size:13px;margin:0 0 10px;color:var(--sub);font-weight:600;letter-spacing:.5px;}
+  .svc{border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:8px;cursor:default;}
+  .svc .t{font-weight:600;font-size:13px;}
+  .svc .d{font-size:12px;color:var(--sub);margin-top:3px;}
+  .svc .k{display:inline-block;font-size:11px;color:var(--brand);background:var(--brand-soft);border-radius:5px;padding:1px 6px;margin-top:6px;}
+  .querybox{display:flex;gap:10px;margin-bottom:10px;}
+  .querybox input{flex:1;border:1px solid var(--line);border-radius:10px;padding:12px 14px;font-size:15px;outline:none;background:#fff;}
+  .querybox input:focus{border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-soft);}
+  .querybox button{border:none;background:var(--brand);color:#fff;padding:0 20px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;}
+  .querybox button:disabled{opacity:.6;cursor:default;}
+  .examples{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;}
+  .examples .ex{font-size:12.5px;color:var(--brand);background:var(--brand-soft);border:1px solid #dbe6ff;border-radius:20px;padding:5px 12px;cursor:pointer;}
+  .examples .ex:hover{background:#e2ecff;}
+  .rec{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px;}
+  .intent-badge{background:var(--brand);color:#fff;font-weight:600;padding:5px 12px;border-radius:8px;font-size:13px;}
+  .slot{font-size:12px;color:var(--sub);background:var(--chip);border-radius:6px;padding:3px 9px;}
+  .slot b{color:var(--ink);}
+  .msg{background:var(--warn-bg);border:1px solid #f6d6bf;color:#9a3412;padding:12px 14px;border-radius:10px;margin-bottom:14px;}
+  .msg.info{background:var(--brand-soft);border-color:#cfe0ff;color:#1e40af;}
+  .risk-normal,.badge-ok{color:var(--ok);background:var(--ok-bg);}
+  .risk-watch{color:var(--watch);background:var(--watch-bg);}
+  .risk-warn{color:var(--warn);background:var(--warn-bg);}
+  .risk-over,.badge-bad{color:var(--bad);background:var(--bad-bg);}
+  .badge{display:inline-block;font-size:11px;font-weight:600;border-radius:6px;padding:2px 8px;}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:14px;}
+  .metric{border:1px solid var(--line);border-radius:10px;padding:12px;text-align:center;}
+  .metric .lbl{font-size:12px;color:var(--sub);}
+  .metric .val{font-size:22px;font-weight:700;margin:4px 0;}
+  .metric .sub{font-size:12px;color:var(--sub);}
+  table{width:100%;border-collapse:collapse;font-size:13px;margin-top:6px;}
+  th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);}
+  th{color:var(--sub);font-weight:600;font-size:12px;background:#fafbfc;}
+  tr.illegal td{background:var(--bad-bg);}
+  .sum{display:flex;gap:18px;margin-bottom:10px;flex-wrap:wrap;}
+  .sum .it{font-size:13px;}
+  .sum .it b{font-size:18px;}
+  .vchip{display:inline-block;font-size:11px;font-weight:600;border-radius:5px;padding:1px 7px;margin:1px 3px 1px 0;}
+  .v-HIGH{background:var(--bad-bg);color:var(--bad);}
+  .v-LOW{background:var(--watch-bg);color:var(--watch);}
+  .members{font-size:12px;color:var(--sub);margin-top:4px;}
+  .err{color:var(--bad);background:var(--bad-bg);padding:12px 14px;border-radius:10px;}
+  .foot{color:var(--sub);font-size:12px;text-align:center;padding:10px;}
+  .loading{color:var(--sub);font-size:13px;padding:8px;}
+  @media(max-width:880px){.wrap{flex-direction:column;}.side{width:100%;flex:none;}}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">排</div>
+  <h1>自然语言排班助手 <span style="color:var(--sub);font-weight:400;font-size:13px;">NL Roster Assistant</span></h1>
+  <span class="tag">仿真/脱敏数据 · 零依赖 Demo</span>
+</header>
+
+<div class="wrap">
+  <aside class="side">
+    <div class="card">
+      <h3>① 罗列接口（5 类查询）</h3>
+      <div id="svcList"></div>
+    </div>
+    <div class="card">
+      <h3>链路</h3>
+      <div style="font-size:12.5px;color:var(--sub);line-height:1.7;">
+        ② 语义识别：自然语言 → 意图 + 槽位<br/>
+        ③ 调接口：命中对应查询服务<br/>
+        ④ 前端展示：下方渲染结果
+      </div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="card">
+      <div class="querybox">
+        <input id="q" placeholder="用自然语言提问，例如：何睿航 还有多少飞行小时" autocomplete="off" />
+        <button id="go">查询</button>
+      </div>
+      <div class="examples" id="examples"></div>
+    </div>
+
+    <div id="rec" class="rec" style="display:none;"></div>
+    <div id="out"></div>
+    <div class="foot">数据均为仿真/脱敏样本，演示用途，非真实航司生产数据。</div>
+  </main>
+</div>
+
+<script>
+const API = '';
+const EXAMPLES = [
+  '何睿航 还有多少飞行小时',
+  'MU1790 这班配组合法吗',
+  '浦东 明天 备勤够不够',
+  '10月30号 浦东 排班覆盖',
+  '王五 连续执勤合规吗',
+  'FL01432 配组审查'
+];
+
+function el(id){return document.getElementById(id);}
+
+function loadServices(){
+  fetch(API+'/api/services').then(r=>r.json()).then(d=>{
+    const box=el('svcList'); box.innerHTML='';
+    (d.services||[]).forEach(s=>{
+      const div=document.createElement('div'); div.className='svc';
+      div.innerHTML=`<div class="t">${s.title}</div><div class="d">${s.purpose}</div><div class="k">${s.name}</div>`;
+      box.appendChild(div);
+    });
+  });
+}
+
+function loadExamples(){
+  const box=el('examples'); box.innerHTML='';
+  const add=(e)=>{const s=document.createElement('span');s.className='ex';s.textContent=e;s.onclick=()=>{el('q').value=e;doQuery();};box.appendChild(s);};
+  EXAMPLES.forEach(add);
+  fetch(API+'/api/demo').then(r=>r.json()).then(d=>{
+    if(d.ok&&d.examples&&d.examples.length){box.innerHTML='';d.examples.forEach(add);}
+  }).catch(()=>{});
+}
+
+function riskClass(r){return 'risk-'+ (r==='正常'?'normal':r==='关注'?'watch':r==='预警'?'warn':'over');}
+function esc(s){return String(s==null?'':s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
+
+function renderRec(rec){
+  const box=el('rec'); box.style.display='flex'; box.innerHTML='';
+  const ib=document.createElement('span'); ib.className='intent-badge'; ib.textContent=rec.intentTitle||rec.intent; box.appendChild(ib);
+  const sl=rec.slots||{};
+  const labels={crew:'机组',flightNo:'航班号',flightId:'航班ID',base:'基地',date:'日期'};
+  for(const k of ['crew','flightNo','flightId','base','date']){
+    if(sl[k]){const s=document.createElement('span');s.className='slot';s.innerHTML=labels[k]+'：<b>'+esc(sl[k])+'</b>';box.appendChild(s);}
+  }
+  if(rec.confidence) {const s=document.createElement('span');s.className='slot';s.textContent='置信度 '+(rec.confidence*100).toFixed(0)+'%';box.appendChild(s);}
+}
+
+function renderResult(res){
+  const out=el('out'); out.innerHTML='';
+  if(!res.ok){
+    const m=document.createElement('div');
+    m.className='msg'+(res.intent?' info':'');
+    m.textContent=res.message||res.error||'处理失败';
+    out.appendChild(m);
+    return;
+  }
+  const r=res.result; if(!r||r.ok===false){const e=document.createElement('div');e.className='err';e.textContent=r?r.error:'无结果';out.appendChild(e);return;}
+  const fns={remaining_hours:renderHours,pairing_check:renderPairing,standby_gap:renderStandby,base_coverage:renderCoverage,rest_compliance:renderRest};
+  (fns[r.service]||renderRaw)(r,out);
+}
+
+function renderHours(r,out){
+  const c=r.crew;
+  const head=document.createElement('div');head.className='card';
+  head.innerHTML=`<div style="font-weight:600;margin-bottom:4px;">${esc(c.name)} <span style="color:var(--sub);font-weight:400;font-size:12px;">${esc(c.baseName)} · ${esc(c.role)} · ${esc(c.employeeNo)}</span></div>
+  <div style="font-size:12px;color:var(--sub);">统计截止 ${esc(r.asOf)} ｜ 未来已排 ${r.next7Hours}h（未来7日）｜ 计划内剩余 ${r.plannedFuture}h</div>`;
+  out.appendChild(head);
+  const g=document.createElement('div');g.className='grid3';
+  [['年度',r.year],['月度',r.month],['连续7日',r.week7]].forEach(([lbl,m])=>{
+    const d=document.createElement('div');d.className='metric';
+    d.innerHTML=`<div class="lbl">${lbl}飞行小时</div><div class="val ${riskClass(m.risk)}">${m.used}</div>
+    <div class="sub">上限 ${m.limit} ｜ 剩余 <b>${m.remain}</b></div>
+    <div class="badge ${riskClass(m.risk)}" style="margin-top:6px;">${m.risk}</div>`;
+    g.appendChild(d);
+  });
+  out.appendChild(g);
+}
+
+function renderPairing(r,out){
+  const head=document.createElement('div');head.className='card';
+  const illegal=r.illegalCount||0;
+  head.innerHTML=`<div style="font-weight:600;">配组合法性 · ${esc(r.scope)}</div>
+  <div style="font-size:12px;color:var(--sub);margin-top:3px;">共 ${r.count} 个航班，不合规 <b class="${illegal?'badge-bad':''}" style="color:${illegal?'var(--bad)':'var(--ok)'}">${illegal}</b> 个</div>`;
+  out.appendChild(head);
+  const tbl=document.createElement('div');tbl.className='card';
+  let html='<table><thead><tr><th>航班</th><th>日期</th><th>机型</th><th>航路</th><th>机组</th><th>违规</th></tr></thead><tbody>';
+  r.results.forEach(f=>{
+    const cls=f.legal?'':'illegal';
+    const mem=f.members.map(m=>`${esc(m.positionCn)} ${esc(m.name)}`).join('、');
+    const vs=f.violations.map(v=>`<span class="vchip v-${v.severity}">${esc(v.rule)}</span>`).join('')||'<span style="color:var(--ok)">合法</span>';
+    html+=`<tr class="${cls}"><td>${esc(f.flightNo)}</td><td>${esc(f.date)}</td><td>${esc(f.aircraft)}</td><td>${esc(f.dep)}→${esc(f.arr)}</td><td>${mem}</td><td>${vs}</td></tr>`;
+  });
+  html+='</tbody></table>';
+  tbl.innerHTML=html; out.appendChild(tbl);
+  if(illegal){
+    const det=document.createElement('div');det.className='card';
+    let d='<div style="font-weight:600;margin-bottom:6px;">违规明细</div>';
+    r.results.filter(f=>!f.legal).forEach(f=>{
+      d+=`<div style="margin:6px 0;"><b>${esc(f.flightNo)}</b> (${esc(f.date)} ${esc(f.aircraft)})</div>`;
+      f.violations.filter(v=>v.severity==='HIGH').forEach(v=>{d+=`<div class="vchip v-HIGH">${esc(v.rule)}</div> ${esc(v.detail)}<br/>`;});
+    });
+    det.innerHTML=d; out.appendChild(det);
+  }
+}
+
+function renderStandby(r,out){
+  const head=document.createElement('div');head.className='card';
+  head.innerHTML=`<div style="font-weight:600;">${esc(r.baseName)} 备勤缺口</div>
+  <div style="font-size:12px;color:${r.hasGap?'var(--bad)':'var(--ok)'};margin-top:3px;">合计缺口 ${r.totalGap} 个备勤组</div>`;
+  out.appendChild(head);
+  const tbl=document.createElement('div');tbl.className='card';
+  let html='<table><thead><tr><th>日期</th><th>出港航班</th><th>应备勤</th><th>实备勤</th><th>缺口</th><th>状态</th></tr></thead><tbody>';
+  r.rows.forEach(x=>{
+    const stCls=x.status==='缺口'?'badge-bad':x.status==='富余'?'risk-normal':'risk-normal';
+    html+=`<tr class="${x.gap>0?'illegal':''}"><td>${esc(x.date)}</td><td>${x.departures}</td><td>${x.required}</td><td>${x.actual}</td><td><b>${x.gap}</b></td><td><span class="badge ${stCls}">${esc(x.status)}</span></td></tr>`;
+  });
+  html+='</tbody></table>';
+  tbl.innerHTML=html; out.appendChild(tbl);
+}
+
+function renderCoverage(r,out){
+  const head=document.createElement('div');head.className='card';
+  head.innerHTML=`<div style="font-weight:600;">${esc(r.baseName)} ${esc(r.date)} 排班覆盖</div>
+  <div class="sum"><div class="it">总航班 <b>${r.totalFlights}</b></div><div class="it">已覆盖 <b style="color:var(--ok)">${r.covered}</b></div><div class="it">未覆盖 <b style="color:${r.uncovered?'var(--bad)':'var(--ok)'}">${r.uncovered}</b></div><div class="it">覆盖率 <b>${Math.round(r.coverageRate*100)}%</b></div></div>`;
+  out.appendChild(head);
+  const tbl=document.createElement('div');tbl.className='card';
+  let html='<table><thead><tr><th>航班</th><th>机型</th><th>起飞</th><th>到达</th><th>机长</th><th>副驾</th><th>状态</th></tr></thead><tbody>';
+  r.flights.forEach(f=>{
+    const st=f.covered?'risk-normal':'badge-bad'; const stTxt=f.covered?'已覆盖':'缺员';
+    html+=`<tr class="${f.covered?'':'illegal'}"><td>${esc(f.flightNo)}</td><td>${esc(f.aircraft)}</td><td>${esc(f.depTime)}</td><td>${esc(f.arr)}</td><td>${f.cap}/${f.needCap}</td><td>${f.fo}/${f.needFo}</td><td><span class="badge ${st}">${stTxt}</span></td></tr>`;
+  });
+  html+='</tbody></table>';
+  tbl.innerHTML=html; out.appendChild(tbl);
+}
+
+function renderRest(r,out){
+  const head=document.createElement('div');head.className='card';
+  const c=r.crew;
+  head.innerHTML=`<div style="font-weight:600;">${esc(c.name)} <span style="color:var(--sub);font-weight:400;font-size:12px;">${esc(c.baseName)} · ${esc(c.role)}</span></div>
+  <div style="font-size:12px;color:var(--sub);margin-top:3px;">审查窗口 ${esc(r.window.since)} ~ ${esc(r.window.until)}</div>
+  <div style="margin-top:6px;">合规性：<span class="badge ${r.compliant?'risk-normal':'badge-bad'}">${r.compliant?'合规':'存在 '+r.violationCount+' 项违规'}</span></div>`;
+  out.appendChild(head);
+  if(r.violations.length){
+    const v=document.createElement('div');v.className='card';
+    let h='<div style="font-weight:600;margin-bottom:6px;">执勤/休息违规</div><table><thead><tr><th>规则</th><th>严重度</th><th>日期</th><th>说明</th></tr></thead><tbody>';
+    r.violations.forEach(x=>{h+=`<tr><td>${esc(x.rule)}</td><td><span class="badge v-${x.severity}">${x.severity}</span></td><td>${esc(x.date||'')}</td><td>${esc(x.detail)}</td></tr>`;});
+    h+='</tbody></table>'; v.innerHTML=h; out.appendChild(v);
+  }
+  if(r.weeklyRestGaps.length){
+    const w=document.createElement('div');w.className='card';
+    let h='<div style="font-weight:600;margin-bottom:6px;">周休不足（任意连续7日无≥24h连续休息）</div><table><thead><tr><th>窗口起</th><th>窗口止</th><th>最长休息(h)</th><th>要求(h)</th></tr></thead><tbody>';
+    r.weeklyRestGaps.forEach(x=>{h+=`<tr><td>${esc(x.windowStart)}</td><td>${esc(x.windowEnd)}</td><td><b>${x.maxRestHours}</b></td><td>${x.required}</td></tr>`;});
+    h+='</tbody></table>'; w.innerHTML=h; out.appendChild(w);
+  }
+}
+
+function renderRaw(r,out){
+  const pre=document.createElement('pre');pre.style.cssText='background:#fafbfc;border:1px solid var(--line);border-radius:10px;padding:12px;font-size:12px;overflow:auto;';
+  pre.textContent=JSON.stringify(r,null,2); out.appendChild(pre);
+}
+
+async function doQuery(){
+  const q=el('q').value.trim(); if(!q) return;
+  const btn=el('go'); btn.disabled=true; const out=el('out'); out.innerHTML='<div class="loading">识别中…</div>'; el('rec').style.display='none';
+  try{
+    const resp=await fetch(API+'/api/query?q='+encodeURIComponent(q));
+    const res=await resp.json();
+    if(res.intent) renderRec(res);
+    renderResult(res);
+  }catch(e){ out.innerHTML='<div class="err">请求失败：'+esc(e.message)+'</div>'; }
+  finally{ btn.disabled=false; }
+}
+
+el('go').onclick=doQuery;
+el('q').addEventListener('keydown',e=>{if(e.key==='Enter')doQuery();});
+loadServices(); loadExamples();
+</script>
+</body>
+</html>
